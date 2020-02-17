@@ -26,6 +26,8 @@ function start_game()
   p_x, p_y = 3, 5
   p_ox, p_oy = 0, 0
   p_sox, p_soy = 0, 0
+  p_flip = false
+  p_mov = nil
 
   p_t = 0
 end
@@ -36,14 +38,7 @@ end
 function update_game()
   for i = 0,3 do
     if btnp(i) then
-      local dx, dy = dirx[i + 1], diry[i + 1]
-
-      p_x += dx
-      p_y += dy
-      p_sox, p_soy = -dx * 8, -dy * 8
-      p_ox, p_oy = p_sox, p_soy
-      p_t = 0
-      _upd = update_pturn
+      moveplayer(dirx[i + 1], diry[i + 1])
       return
     end
   end
@@ -52,19 +47,29 @@ end
 function update_pturn()
   p_t = min(p_t + 0.125, 1)
 
-  p_ox = p_sox * (1 - p_t)
-  p_oy = p_soy * (1 - p_t)
+  p_mov()
 
   if p_t == 1 then
     _upd = update_game
   end
-
-  if p_ox == 0 and p_oy == 0 then
-    _upd = update_game
-  end
 end
 
-function update_gameover()
+-- function update_gameover()
+-- end
+
+function mov_walk()
+  p_ox = p_sox * (1 - p_t)
+  p_oy = p_soy * (1 - p_t)
+end
+
+function mov_bump()
+  local tme = p_t
+
+if p_t > 0.5 then
+  tme = 1 - p_t
+end
+  p_ox = p_sox * tme
+  p_oy = p_soy * tme
 end
 
 -->8
@@ -73,11 +78,11 @@ end
 function draw_game()
   cls()
   map()
-  drawspr(getframe(p_ani), p_x * 8 + p_ox, p_y * 8 + p_oy, 10)
+  drawspr(getframe(p_ani), p_x * 8 + p_ox, p_y * 8 + p_oy, 10, p_flip)
 end
 
-function draw_gameover()
-end
+-- function draw_gameover()
+-- end
 
 -->8
 -- tools
@@ -86,11 +91,44 @@ function getframe(_ani)
   return _ani[flr(t / 15) % #_ani + 1]
 end
 
-function drawspr(_spr, _x, _y, _c)
+function drawspr(_spr, _x, _y, _c, _flip)
   palt(0, false)
   pal(6, _c)
-  spr(_spr, _x, _y)
+  spr(_spr, _x, _y, 1, 1, _flip)
   pal()
+end
+
+-->8
+-- gameplay
+
+function moveplayer(_dx, _dy)
+  local destx, desty = p_x + _dx, p_y + _dy
+  local tle = mget(destx, desty)
+
+  if _dx < 0 then
+    p_flip = true
+  else
+    p_flip = false
+  end
+
+  if fget(tle, 0) then
+    -- wall
+    p_sox, p_soy = _dx * 8, _dy * 8
+    p_ox, p_oy = 0, 0
+    p_t = 0
+    _upd = update_pturn
+    p_mov = mov_bump
+  else
+    p_x += _dx
+    p_y += _dy
+
+    p_sox, p_soy = -_dx * 8, -_dy * 8
+    p_ox, p_oy = p_sox, p_soy
+    p_t = 0
+    _upd = update_pturn
+    p_mov = mov_walk
+  end
+
 end
 
 __gfx__
@@ -222,6 +260,9 @@ __gfx__
 66000000066066000660000066066600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 66066606066066000660660066066606000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00600600000660000060060000066000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__gff__
+0000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000202020202020202020200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
