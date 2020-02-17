@@ -2,13 +2,15 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 function _init()
-  tile_size=8
+  t = 0
+  p_ani = {240, 241, 242, 243}
   _upd = update_game
   _drw = draw_game
   start_game()
 end
 
 function _update()
+  t += 1
   _upd()
 end
 
@@ -19,32 +21,86 @@ end
 function start_game()
   p_x = 3
   p_y = 5
+  p_ox = 0
+  p_oy = 0
 end
 
 -->8
 -- updates
+
 function update_game()
-  if btnp(⬅️) then p_x -= 1 end
-  if btnp(➡️) then p_x += 1 end
-  if btnp(⬆️) then p_y -= 1 end
-  if btnp(⬇️) then p_y += 1 end
+  if btnp(⬅️) then
+    p_x -= 1
+    p_ox = 8
+    _upd = update_pturn
+  end
+  if btnp(➡️) then
+    p_x += 1
+    p_ox = -8
+    _upd = update_pturn
+  end
+  if btnp(⬆️) then
+    p_y -= 1
+    p_oy = 8
+    _upd = update_pturn
+  end
+  if btnp(⬇️) then
+    p_y += 1
+    p_oy = -8
+    _upd = update_pturn
+  end
+end
+
+function update_pturn()
+  if p_ox > 0 then
+    p_ox -= 1
+  end
+  if p_ox < 0 then
+    p_ox += 1
+  end
+  if p_oy > 0 then
+    p_oy -= 1
+  end
+  if p_oy < 0 then
+    p_oy += 1
+  end
+
+  if p_ox == 0 and p_oy == 0 then
+    _upd = update_game
+  end
 end
 
 function update_gameover()
 end
+
 -->8
 -- draws
+
 function draw_game()
   cls()
   map()
-  palt(0, false)
-  pal(6, 10)
-  spr(240, p_x * tile_size, p_y * tile_size)
-  pal()
+
+  drawspr(getframe(p_ani), p_x * 8, p_y * 8, 9)
+  drawspr(getframe(p_ani), p_x * 8 + p_ox, p_y * 8 + p_oy, 10)
 end
 
 function draw_gameover()
 end
+
+-->8
+-- tools
+
+function getframe(_ani)
+  return _ani[flr(t / 8) % #_ani + 1]
+end
+
+function drawspr(_spr, _x, _y, _c)
+  palt(0, false)
+  pal(6, _c)
+  spr(_spr, _x, _y)
+  pal()
+end
+
 __gfx__
 0000000000000000606660600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a000000055555550
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0aa000000000000
